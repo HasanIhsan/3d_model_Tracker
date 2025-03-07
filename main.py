@@ -2,6 +2,8 @@ import pygame as pg
 import moderngl as mgl
 import sys
 
+from model import *
+
 class GraphicsEngine:
     def __init__(self, win_size=(1600,900)):
         
@@ -25,16 +27,23 @@ class GraphicsEngine:
         #create an object to help track time
         self.clock = pg.time.Clock()
         
+        #scene
+        self.scene = Triangle(self)
+        
         
     def check_events(self):
         for event in pg.event.get():
-            if event.type == pg.QUIT or (event.type == pg.KEYDOWN and event.key == ph.K_ESCAPE):
+            if event.type == pg.QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
+                self.scene.destroy()
                 pg.quit()
                 sys.exit()
                 
     def render(self):
         #clear frambuffer
         self.ctx.clear(color=(0.08, 0.16, 0.18))
+        
+        #render scene
+        self.scene.render()
         
         #swap buffer
         pg.display.flip()
