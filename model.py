@@ -35,7 +35,8 @@ class Cube:
         self.vao.release()
     
     def get_vao(self):
-        vao = self.ctx.vertex_array(self.shader_program, [(self.vbo, '3f', 'in_position')])
+        vao = self.ctx.vertex_array(self.shader_program,
+                                    [(self.vbo, '2f 3f', 'in_texcoord_0', 'in_position')])
         return vao
     
     def get_vertex_data(self):
@@ -49,7 +50,20 @@ class Cube:
                    (3,7,4),(3,2,7),
                    (0,6,1), (0,5,6)]
         
+        
         vertex_data = self.get_data(vertices, indices)
+        
+        tex_coord = [(0,0), (1,0), (1,1), (0,1)]
+        tex_coord_indices = [(0,2,3),(0,1,2),
+                             (0,2,3),(0,1,2),
+                             (0,1,2),(2,3,0),
+                             (2,3,0),(2,0,1),
+                             (0,2,3),(0,1,2),
+                             (3,1,2),(3,0,1),]
+        tex_coord_data = self.get_data(tex_coord, tex_coord_indices)
+        
+        vertex_data = np.hstack([tex_coord_data, vertex_data])
+        
         return vertex_data
     
     
