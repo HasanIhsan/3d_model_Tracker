@@ -24,6 +24,8 @@ class GraphicsEngine:
         
         #detect and use existing opengl context
         self.ctx = mgl.create_context()
+        #self.ctx.front_face = 'cw'
+        self.ctx.enable(flags=mgl.DEPTH_TEST | mgl.CULL_FACE)
         
         #create an object to help track time
         self.clock = pg.time.Clock()
