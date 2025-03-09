@@ -4,6 +4,7 @@ import sys
 
 from model import *
 from camera import Camera
+from light import Light
 
 class GraphicsEngine:
     def __init__(self, win_size=(1600,900)):
@@ -35,6 +36,9 @@ class GraphicsEngine:
         self.clock = pg.time.Clock()
         self.time = 0
         self.delta_time = 0
+        
+        #light
+        self.light = Light()
         
         #camera
         self.camera = Camera(self)

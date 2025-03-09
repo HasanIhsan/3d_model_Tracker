@@ -30,6 +30,9 @@ class Cube:
         return m_model
     
     def on_init(self):
+        #light
+        self.shader_program['light.Ia'].write(self.app.light.Ia)
+        
         #texture
         self.shader_program['u_texture_0'] = 0
         self.texture.use()
