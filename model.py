@@ -66,3 +66,60 @@ class Cube(BaseModel):
         self.program['light.Id'].write(self.app.light.Id)
         self.program['light.Is'].write(self.app.light.Is)
         
+
+
+class Cat(BaseModel):
+    def __init__(self, app, vao_name='cat', tex_id='cat', pos=(0,0,0), rot=(0,0,0), scale=(1,1,1)):
+       super().__init__(app, vao_name, tex_id, pos, rot, scale)
+       self.on_init()
+       
+    def update(self):
+        self.texture.use()
+        #print("Using texture:", self.texture)
+        self.program['camPos'].write(self.camera.position)
+        self.program['m_view'].write(self.camera.m_view)
+        self.program['m_model'].write(self.m_model)
+        
+    def on_init(self):
+        #texture
+        self.texture = self.app.mesh.texture.textures[self.tex_id]
+
+        #print(self.texture)
+
+           # Ensure textures are handled properly
+        if isinstance(self.texture, dict):  # If multiple textures exist
+            for material_name, self.texture in self.texture.items():
+                print(f"Using texture: {material_name}")
+                self.texture.use()  # Use each texture in the dictionary
+              
+        else:
+            self.texture.use()  # Use the single texture directly
+            self.program['u_texture_0'] = 0
+       
+        #if isinstance(self.texture, dict):  # If multiple textures exist
+        #    # Access and use the first texture in the dictionary
+        #    first_texture_key = next(iter(self.texture))  # Get the first key in the dictionary
+        #    self.texture = self.texture[first_texture_key]  # Set self.texture to the first texture
+        #    print(f"Using texture: {first_texture_key}")
+        #    self.texture.use()  # Use the first texture
+            
+           
+        #else:
+        #    self.texture.use()  # Use the single texture directly
+        
+     
+        self.program['u_texture_0'] = 0
+        
+         
+        
+        #mvp
+        self.program['m_proj'].write(self.camera.m_proj)
+        self.program['m_view'].write(self.camera.m_view)
+        self.program['m_model'].write(self.m_model)
+        
+        #light
+        self.program['light.position'].write(self.app.light.position)
+        self.program['light.Ia'].write(self.app.light.Ia)
+        self.program['light.Id'].write(self.app.light.Id)
+        self.program['light.Is'].write(self.app.light.Is)
+        

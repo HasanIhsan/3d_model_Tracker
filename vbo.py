@@ -1,11 +1,12 @@
 import numpy as np
 import moderngl as mgl
-
+import pywavefront
 
 class VBO:
     def __init__(self, ctx):
         self.vbos = {}
         self.vbos['cube'] = CuboVBO(ctx)
+        self.vbos['cat'] = CatVBO(ctx)
     
     def destroy(self):
         [vbo.destroy() for vbo in self.vbos.values()]
@@ -76,5 +77,31 @@ class CuboVBO(BaseVBO):
         
         vertex_data = np.hstack([normals, vertex_data])
         vertex_data = np.hstack([tex_coord_data, vertex_data])
+        
+        return vertex_data
+    
+class CatVBO(BaseVBO):
+    def __init__(self, app):
+        super().__init__(app)
+        self.format = '2f 3f 3f'
+        self.attribs = ['in_texcoord_0', 'in_normal', 'in_position']
+        
+    def get_vertx_data(self):
+        objs = pywavefront.Wavefront('objects/vtuber/ImageToStl.com_fak3rR_.vrm.obj', cache=True, parse=True)
+        
+        #obj = objs.materials.popitem()[1]
+        #vertex_data = obj.vertices
+        
+        # Collect all vertices from all materials
+        vertex_data = []
+        for material in objs.materials.values():
+            vertex_data.extend(material.vertices)
+
+        
+        
+        vertex_data = np.array(vertex_data, dtype='f4')
+        
+        print("Vertex Data Sample:", vertex_data[:10])  # Print first 10 elements
+
         
         return vertex_data

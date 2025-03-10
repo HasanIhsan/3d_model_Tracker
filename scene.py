@@ -24,6 +24,8 @@ class Scene:
             for z in range(-n,n,s):
                 add(Cube(app, pos=(x, -s, z)))
         
+        add(Cat(app, pos=(0,2,10), scale=(0.5,0.5,0.5)))
+        
     def render(self):
         for obj in self.objects:
             obj.render()
