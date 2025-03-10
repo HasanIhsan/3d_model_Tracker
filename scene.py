@@ -16,8 +16,8 @@ class Scene:
         
         
         add(Cube(app))
-        add(Cube(app, tex_id=1, pos=(-2.5,0,0)))
-        add(Cube(app, tex_id=1, pos=(2.5, 0,0)))
+        add(Cube(app, tex_id=1, pos=(-2.5,0,0), rot=(45,0,0)))
+        add(Cube(app, tex_id=1, pos=(2.5, 0,0), rot=(0,0,45)))
         
     def render(self):
         for obj in self.objects:
