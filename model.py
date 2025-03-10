@@ -13,30 +13,22 @@ class BaseModel:
         self.vao = app.mesh.vao.vaos[vao_name]
         self.program = self.vao.program
         self.camera = self.app.camera
-        
+        self.textures = self.app.mesh.texture.textures[tex_id] if isinstance(self.app.mesh.texture.textures[tex_id], dict) else {tex_id: self.app.mesh.texture.textures[tex_id]}
+
     def update(self): ...
-    
+
     def get_model_matrix(self):
         m_model = glm.mat4()
-        
-        #Translate
         m_model = glm.translate(m_model, self.pos)
-        
-        #rotate
         m_model = glm.rotate(m_model, self.rot.x, glm.vec3(1,0,0))
         m_model = glm.rotate(m_model, self.rot.y, glm.vec3(0,1,0))
         m_model = glm.rotate(m_model, self.rot.z, glm.vec3(0,0,1))
-        
-        #scale
         m_model = glm.scale(m_model, self.scale)
-        
         return m_model
-    
+
     def render(self):
         self.update()
         self.vao.render()
-        
-        
 
 class Cube(BaseModel):
     def __init__(self, app, vao_name='cube', tex_id=0, pos=(0,0,0), rot=(0,0,0), scale=(1,1,1)):
@@ -70,56 +62,28 @@ class Cube(BaseModel):
 
 class Cat(BaseModel):
     def __init__(self, app, vao_name='cat', tex_id='cat', pos=(0,0,0), rot=(0,0,0), scale=(1,1,1)):
-       super().__init__(app, vao_name, tex_id, pos, rot, scale)
-       self.on_init()
-       
+        super().__init__(app, vao_name, tex_id, pos, rot, scale)
+        self.on_init()
+
     def update(self):
-        self.texture.use()
-        #print("Using texture:", self.texture)
+        for tex_unit, texture in enumerate(self.textures.values()):  # Iterate over textures
+            texture.use(location=tex_unit)  # Bind texture to the correct texture unit
         self.program['camPos'].write(self.camera.position)
         self.program['m_view'].write(self.camera.m_view)
         self.program['m_model'].write(self.m_model)
-        
+
     def on_init(self):
-        #texture
-        self.texture = self.app.mesh.texture.textures[self.tex_id]
+        for tex_unit, texture in enumerate(self.textures.values()):  # Iterate over textures
+            texture.use(location=tex_unit)  # Bind texture to the correct texture unit
+            uniform_name = f'u_texture_{tex_unit}'
+            if uniform_name in self.program:  # Check if the uniform exists in the shader
+                self.program[uniform_name] = tex_unit  # Set texture unit in the shader
 
-        #print(self.texture)
-
-           # Ensure textures are handled properly
-        if isinstance(self.texture, dict):  # If multiple textures exist
-            for material_name, self.texture in self.texture.items():
-                print(f"Using texture: {material_name}")
-                self.texture.use()  # Use each texture in the dictionary
-              
-        else:
-            self.texture.use()  # Use the single texture directly
-            self.program['u_texture_0'] = 0
-       
-        #if isinstance(self.texture, dict):  # If multiple textures exist
-        #    # Access and use the first texture in the dictionary
-        #    first_texture_key = next(iter(self.texture))  # Get the first key in the dictionary
-        #    self.texture = self.texture[first_texture_key]  # Set self.texture to the first texture
-        #    print(f"Using texture: {first_texture_key}")
-        #    self.texture.use()  # Use the first texture
-            
-           
-        #else:
-        #    self.texture.use()  # Use the single texture directly
-        
-     
-        self.program['u_texture_0'] = 0
-        
-         
-        
-        #mvp
         self.program['m_proj'].write(self.camera.m_proj)
         self.program['m_view'].write(self.camera.m_view)
         self.program['m_model'].write(self.m_model)
-        
-        #light
+
         self.program['light.position'].write(self.app.light.position)
         self.program['light.Ia'].write(self.app.light.Ia)
         self.program['light.Id'].write(self.app.light.Id)
         self.program['light.Is'].write(self.app.light.Is)
-        
