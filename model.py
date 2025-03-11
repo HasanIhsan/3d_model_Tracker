@@ -2,6 +2,9 @@ import moderngl as mgl
 import numpy as np
 import glm
 
+from vbo import BodyPart
+
+
 class BaseModel:
     def __init__(self, app, vao_name, tex_id, pos=(0,0,0), rot=(0,0,0), scale=(1,1,1)):
         self.app = app
@@ -13,7 +16,12 @@ class BaseModel:
         self.vao = app.mesh.vao.vaos[vao_name]
         self.program = self.vao.program
         self.camera = self.app.camera
-        self.textures = self.app.mesh.texture.textures[tex_id] if isinstance(self.app.mesh.texture.textures[tex_id], dict) else {tex_id: self.app.mesh.texture.textures[tex_id]}
+
+        # Handle texture assignment
+        if isinstance(tex_id, str):  # If tex_id is a string (e.g., 'cat')
+            self.textures = self.app.mesh.texture.textures.get(tex_id, {})
+        else:  # If tex_id is an integer (e.g., 0, 1, 2)
+            self.textures = {tex_id: self.app.mesh.texture.textures[tex_id]}
 
     def update(self): ...
 
@@ -61,28 +69,108 @@ class Cube(BaseModel):
 
 
 class Cat(BaseModel):
-    def __init__(self, app, vao_name='cat', tex_id='cat', pos=(0,0,0), rot=(0,0,0), scale=(1,1,1)):
+    def __init__(self, app, vao_name='cat', tex_id='cat', pos=(0,0,0), rot=(0,0,0), scale=(1,1,1), render_mode="", part_to_render=None):
         super().__init__(app, vao_name, tex_id, pos, rot, scale)
-        self.on_init()
+        self.parts = {}
+        self.render_mode = render_mode  # 'all' or 'single'
+        self.part_to_render = part_to_render  # Specific part to render (if render_mode is 'single')
 
+        # Define custom positions for each part
+        self.part_positions = {
+            'N00_000_00_FaceMouth_00_FACE_(Instance)': (0, 2, 10),
+            'N00_000_00_EyeIris_00_EYE_(Instance)': (0.5, 2.2, 10),
+            'N00_000_00_EyeHighlight_00_EYE_(Instance)': (0.5, 2.2, 10.1),
+            'N00_000_00_Face_00_SKIN_(Instance)': (0, 2, 10),
+            'N00_000_00_EyeWhite_00_EYE_(Instance)': (0.5, 2.2, 10),
+            'N00_000_00_FaceBrow_00_FACE_(Instance)': (0, 2.1, 10),
+            'N00_000_00_FaceEyeline_00_FACE_(Instance)': (0, 2, 10),
+            'N00_000_00_Body_00_SKIN_(Instance)': (0, 1.5, 10),
+            'N00_005_01_Shoes_01_CLOTH_(Instance)': (0, 1, 10),
+            'N00_001_02_Bottoms_01_CLOTH_(Instance)': (0, 1.5, 10),
+            'N00_007_03_Tops_01_CLOTH_(Instance)': (0, 1.8, 10),
+            'N00_000_00_HairBack_00_HAIR_(Instance)': (0, 2.2, 10),
+            'N00_010_01_Onepiece_00_CLOTH_(Instance)': (0, 1.5, 10),
+            'N00_000_Hair_00_HAIR_(Instance)': (0, 2.2, 10),
+        }
+
+        # Load all parts from the VBO
+        vbo = app.mesh.vao.vbo.vbos['cat']
+        
+        # Debug: Check if VBO has parts
+        print(f"Cat VBO Parts: {len(vbo.parts)}")
+        print(vbo.parts.keys())
+        
+        # Iterate over all parts and create a VAO for each
+        for part_name, vertex_data in vbo.parts.items():
+            if len(vertex_data) > 0:  # Avoid empty VAOs
+                # Create a new VBO for the part
+                part_vbo = app.ctx.buffer(vertex_data)
+                part_vao = app.ctx.vertex_array(self.program, [(part_vbo, vbo.format, *vbo.attribs)])
+
+                # Get the custom position for this part
+                part_position = self.part_positions.get(part_name, pos)  # Use default position if not specified
+
+                # Add the body part with its position transformation
+                self.parts[part_name] = BodyPart(
+                    vao=part_vao,  # Use the new VAO for the part
+                    program=self.program,
+                    position=part_position,  # Use the custom position for this part
+                    rotation=(0, 0, 0),  # Set rotation if needed
+                    scale=(1, 1, 1)  # Scale if needed
+                )
+
+        print("Cat model initialized")
+        print(f"Number of parts: {len(self.parts)}")
+        print(f"Textures: {self.textures}")
+        print(f"Shader program: {self.program}")
+        self.on_init()
+        
     def update(self):
-        for tex_unit, texture in enumerate(self.textures.values()):  # Iterate over textures
-            texture.use(location=tex_unit)  # Bind texture to the correct texture unit
+        print('Updating body parts')
+        # Update all body parts
+        for part in self.parts.values():
+            part.update()
+
+        # Update global model properties (if needed)
         self.program['camPos'].write(self.camera.position)
         self.program['m_view'].write(self.camera.m_view)
         self.program['m_model'].write(self.m_model)
+    
+    def render(self):
+        if self.render_mode == 'all':
+            # Render all body parts
+            for part_name, part in self.parts.items():
+                print(f"Rendering body part: {part_name}")
+                part.render()
+        elif self.render_mode == 'single' and self.part_to_render in self.parts:
+            # Render only the specified part
+            print(f"Rendering specific part: {self.part_to_render}")
+            self.parts[self.part_to_render].render()
+        else:
+            print(f"Invalid render mode or part not found: {self.part_to_render}")
 
     def on_init(self):
-        for tex_unit, texture in enumerate(self.textures.values()):  # Iterate over textures
-            texture.use(location=tex_unit)  # Bind texture to the correct texture unit
-            uniform_name = f'u_texture_{tex_unit}'
-            if uniform_name in self.program:  # Check if the uniform exists in the shader
-                self.program[uniform_name] = tex_unit  # Set texture unit in the shader
+        # Apply textures to all parts
+        if isinstance(self.tex_id, str):  # If tex_id is a string (e.g., 'cat')
+            material_textures = self.textures  # This is a dictionary of textures for the 'cat' model
+            for material_name, texture in material_textures.items():
+                texture_unit = list(material_textures.keys()).index(material_name)  # Assign a unique texture unit
+                texture.use(location=texture_unit)
+                uniform_name = f'u_texture_{texture_unit}'
+                
+                print(f'Material name: {material_name}, texture unit: {texture_unit}, uniform name: {uniform_name}')
+                
+                if uniform_name in self.program:
+                    self.program[uniform_name] = texture_unit
+        else:  # If tex_id is an integer (e.g., 0, 1, 2)
+            self.textures[self.tex_id].use(location=0)
+            self.program['u_texture_0'] = 0
 
+        # Set up shader matrices
         self.program['m_proj'].write(self.camera.m_proj)
         self.program['m_view'].write(self.camera.m_view)
-        self.program['m_model'].write(self.m_model)
 
+        # Apply lighting settings
         self.program['light.position'].write(self.app.light.position)
         self.program['light.Ia'].write(self.app.light.Ia)
         self.program['light.Id'].write(self.app.light.Id)

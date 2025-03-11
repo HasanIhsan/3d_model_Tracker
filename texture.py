@@ -7,9 +7,9 @@ class Texture:
     def __init__(self, ctx):
         self.ctx = ctx
         self.textures = {}
-        self.textures[0] = self.get_texture(path='textures/img1.png')
-        self.textures[1] = self.get_texture(path='textures/test.png')
-        self.textures[2] = self.get_texture(path='textures/notex.png')
+        self.textures[0] = self.get_texture(path='textures/notex.png')
+        #self.textures[1] = self.get_texture(path='textures/test.png')
+        #self.textures[2] = self.get_texture(path='textures/notex.png')
         self.textures['cat'] = self.load_texture_mtl('objects/vtuber/ImageToStl.com_fak3rR_.vrm.mtl', tex_id='cat')
 
     def get_texture(self, path):

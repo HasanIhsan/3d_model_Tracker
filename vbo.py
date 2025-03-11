@@ -1,10 +1,13 @@
 import numpy as np
 import moderngl as mgl
 import pywavefront
+import glm
 
 class VBO:
     def __init__(self, ctx):
+        self.ctx = ctx
         self.vbos = {}
+        self.parts = {}
         self.vbos['cube'] = CuboVBO(ctx)
         self.vbos['cat'] = CatVBO(ctx)
     
@@ -81,27 +84,53 @@ class CuboVBO(BaseVBO):
         return vertex_data
     
 class CatVBO(BaseVBO):
-    def __init__(self, app):
-        super().__init__(app)
+    def __init__(self, ctx):
+        self.parts = {}  # Store parts separately
+        super().__init__(ctx)
         self.format = '2f 3f 3f'
         self.attribs = ['in_texcoord_0', 'in_normal', 'in_position']
-        
-    def get_vertx_data(self):
+   
+    def get_vertx_data(self, part_name=None):
+        # Load the .obj file
         objs = pywavefront.Wavefront('objects/vtuber/ImageToStl.com_fak3rR_.vrm.obj', cache=True, parse=True)
         
-        #obj = objs.materials.popitem()[1]
-        #vertex_data = obj.vertices
-        
-        # Collect all vertices from all materials
-        vertex_data = []
-        for material in objs.materials.values():
-            vertex_data.extend(material.vertices)
+        self.parts = {}  # Clear any existing parts
+        for name, material in objs.materials.items():
+            self.parts[name] = np.array(material.vertices, dtype='f4')  # Store each part separately
 
+        # If part_name is provided, only return the data for that part
+        if part_name:
+            if part_name in self.parts:
+                print(f"Loading part: {part_name}")
+                return self.parts[part_name]  # Return the data for the specific part
+            else:
+                print(f"Part {part_name} not found!")
+                return np.array([])  # Return empty if part is not found
         
-        
-        vertex_data = np.array(vertex_data, dtype='f4')
-        
-        print("Vertex Data Sample:", vertex_data[:10])  # Print first 10 elements
+        # Return all parts as fallback if no specific part requested
+        print(f"Loaded {len(self.parts)} parts")
+        return np.concatenate(list(self.parts.values()), axis=0)  # Concatenate all parts' vertex data
 
-        
-        return vertex_data
+class BodyPart:
+    def __init__(self, vao, program, position=(0,0,0), rotation=(0,0,0), scale=(1,1,1)):
+        self.vao = vao
+        self.program = program
+        self.position = glm.vec3(position)
+        self.rotation = glm.vec3([glm.radians(a) for a in rotation])
+        self.scale = glm.vec3(scale)
+
+    def get_model_matrix(self):
+        m = glm.mat4()
+        m = glm.translate(m, self.position)
+        m = glm.rotate(m, self.rotation.x, glm.vec3(1, 0, 0))
+        m = glm.rotate(m, self.rotation.y, glm.vec3(0, 1, 0))
+        m = glm.rotate(m, self.rotation.z, glm.vec3(0, 0, 1))
+        m = glm.scale(m, self.scale)
+        return m
+
+    def update(self):
+        self.program['m_model'].write(self.get_model_matrix())
+
+    def render(self): 
+        self.update()
+        self.vao.render()

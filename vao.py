@@ -21,6 +21,11 @@ class VAO:
         )
 
     def get_vao(self, program, vbo):
+        if vbo.vbo is None:
+            print("Error: VBO is empty, cannot create VAO.")
+            return None
+        
+        print(f"Creating VAO for program: {program}")
         vao = self.ctx.vertex_array(program, [(vbo.vbo, vbo.format, *vbo.attribs)])
         return vao
 
