@@ -36,6 +36,14 @@ class BaseModel:
 
     def render(self):
         self.update()
+        if isinstance(self.textures, dict):
+            for i, (mat_name, tex) in enumerate(self.textures.items()):
+                tex.use(location=i)
+                self.program[f"u_texture_{i}"] = i
+        elif self.tex_id in self.app.mesh.texture.textures:
+            self.app.mesh.texture.textures[self.tex_id].use(location=0)
+            self.program["u_texture_0"] = 0
+
         self.vao.render()
 
 class Cube(BaseModel):
@@ -50,6 +58,8 @@ class Cube(BaseModel):
         self.program['m_model'].write(self.m_model)
         
     def on_init(self):
+        
+        
         #texture
         self.texture = self.app.mesh.texture.textures[self.tex_id]
         self.program['u_texture_0'] = 0
@@ -78,19 +88,19 @@ class Cat(BaseModel):
         # Define custom positions for each part
         self.part_positions = {
             'N00_000_00_FaceMouth_00_FACE_(Instance)': (0, 2, 10),
-            'N00_000_00_EyeIris_00_EYE_(Instance)': (0.5, 2.2, 10),
-            'N00_000_00_EyeHighlight_00_EYE_(Instance)': (0.5, 2.2, 10.1),
+            'N00_000_00_EyeIris_00_EYE_(Instance)': (0, 2, 10),
+            'N00_000_00_EyeHighlight_00_EYE_(Instance)': (0, 2, 10.1),
             'N00_000_00_Face_00_SKIN_(Instance)': (0, 2, 10),
-            'N00_000_00_EyeWhite_00_EYE_(Instance)': (0.5, 2.2, 10),
-            'N00_000_00_FaceBrow_00_FACE_(Instance)': (0, 2.1, 10),
+            'N00_000_00_EyeWhite_00_EYE_(Instance)': (0, 2, 10),
+            'N00_000_00_FaceBrow_00_FACE_(Instance)': (0, 2, 10),
             'N00_000_00_FaceEyeline_00_FACE_(Instance)': (0, 2, 10),
-            'N00_000_00_Body_00_SKIN_(Instance)': (0, 1.5, 10),
-            'N00_005_01_Shoes_01_CLOTH_(Instance)': (0, 1, 10),
-            'N00_001_02_Bottoms_01_CLOTH_(Instance)': (0, 1.5, 10),
-            'N00_007_03_Tops_01_CLOTH_(Instance)': (0, 1.8, 10),
-            'N00_000_00_HairBack_00_HAIR_(Instance)': (0, 2.2, 10),
-            'N00_010_01_Onepiece_00_CLOTH_(Instance)': (0, 1.5, 10),
-            'N00_000_Hair_00_HAIR_(Instance)': (0, 2.2, 10),
+            'N00_000_00_Body_00_SKIN_(Instance)': (0, 2, 10),
+            'N00_005_01_Shoes_01_CLOTH_(Instance)': (0, 2, 10),
+            'N00_001_02_Bottoms_01_CLOTH_(Instance)': (0, 2, 10),
+            'N00_007_03_Tops_01_CLOTH_(Instance)': (0, 2, 10),
+            'N00_000_00_HairBack_00_HAIR_(Instance)': (0, 2, 10),
+            'N00_010_01_Onepiece_00_CLOTH_(Instance)': (0, 2, 10),
+            'N00_000_Hair_00_HAIR_(Instance)': (0, 2, 10),
         }
 
         # Load all parts from the VBO
@@ -123,20 +133,36 @@ class Cat(BaseModel):
 
         print("Cat model initialized")
         print(f"Number of parts: {len(self.parts)}")
-        print(f"Textures: {self.textures}")
-        print(f"Shader program: {self.program}")
+        #print(f"Textures: {self.textures}")
+        #print(f"Shader program: {self.program}")
+        #print(f"self.textures: {self.textures}")
         self.on_init()
         
     def update(self):
-        #print('Updating body parts')
-        # Update all body parts
-        for part in self.parts.values():
-            part.update()
+        # For each cat part’s texture, bind it again (or just bind the main one if you only have one).
+        # If you have multiple textures, you can do something like:
+        #   for i, (material_name, tex) in enumerate(self.textures.items()):
+        #       tex.use(location=i)
+        #       self.program[f"u_texture_{i}"] = i
+        
+        # But if you only have one, do something like:
+        if not isinstance(self.tex_id, str):
+            # Single integer texture ID
+            print(f'text_id: {self.tex_id}')
+            self.textures[self.tex_id].use(location=0)
+            self.program["u_texture_0"] = 0
+        else:
+            # For each material in cat
+            for i, (mat_name, tex) in enumerate(self.textures.items()):
+                print(f'mat_name: {mat_name}')
+                tex.use(location=i)
+                uniform_name = f"u_texture_{i}"
+                self.program[uniform_name] = i
 
-        # Update global model properties (if needed)
-        self.program['camPos'].write(self.camera.position)
-        self.program['m_view'].write(self.camera.m_view)
-        self.program['m_model'].write(self.m_model)
+        # also update camera & transform
+        self.program["camPos"].write(self.camera.position)
+        self.program["m_view"].write(self.camera.m_view)
+        self.program["m_model"].write(self.m_model)
     
     def render(self):
         if self.render_mode == 'all':
@@ -152,21 +178,60 @@ class Cat(BaseModel):
             print(f"Invalid render mode or part not found: {self.part_to_render}")
 
     def on_init(self):
-        # Apply textures to all parts
-        if isinstance(self.tex_id, str):  # If tex_id is a string (e.g., 'cat')
-            material_textures = self.textures  # This is a dictionary of textures for the 'cat' model
-            for material_name, self.texture in material_textures.items():
-                texture_unit = list(material_textures.keys()).index(material_name)  # Assign a unique texture unit
-                self.texture.use(location=texture_unit)
-                uniform_name = f'u_texture_{texture_unit}'
+        
+        print(f"self.textures: {self.textures}")
+        
+        if isinstance(self.tex_id, int):
+            # Ensure self.textures[tex_id] is a Texture object and not a dictionary
+            texture_entry = self.textures.get(self.tex_id, None)
+            
+            if isinstance(texture_entry, dict):
+                print(f'is Dict: {texture_entry}')
                 
-                print(f'Material name: {material_name}, texture unit: {texture_unit}, uniform name: {uniform_name}')
+                # If it's a dictionary, try to fetch the first valid texture inside it
+                first_key = next(iter(texture_entry), None)
+                texture = texture_entry[first_key] if first_key else None
                 
-                if uniform_name in self.program:
-                    self.program[uniform_name] = texture_unit
-        else:  # If tex_id is an integer (e.g., 0, 1, 2)
-            self.textures[self.tex_id].use(location=0)
-            self.program['u_texture_0'] = 0
+                print(f'texture : {texture}')
+            else:
+                texture = texture_entry  # Directly assign if it's already a Texture object
+
+            if isinstance(texture, mgl.Texture):
+                print(f"Texture loaded: {texture}")
+            else:
+                print(f"Warning: Texture is not valid - {type(texture)}")
+    
+            if isinstance(texture, mgl.Texture):
+                print(f'use texture: {texture.use(location=0)}')
+                
+                texture.use(location=0)
+                self.program['u_texture_0'] = 0
+            else:
+                print(f"Warning: Expected a texture, but got {type(texture)} - tex_id: {self.tex_id}")
+
+        elif isinstance(self.textures, dict):
+            for i, (mat_name, tex) in enumerate(self.textures.items()):
+                if isinstance(tex, mgl.Texture):  # Ensure it's a valid texture
+                    print(f'textures: {mat_name} : {tex}')
+                 
+                    print(f"Binding texture {tex} to uniform u_texture_{i}")
+                    tex.use(location=i)
+                    uniform_name = f"u_texture_{i}"
+                    
+                    print(f'tex_use: {tex.use(location=i)}')
+                    print()
+                    print(f'uniform: {uniform_name}')
+                    
+                    if isinstance(tex, mgl.Texture):
+                        print(f"Using_texture: {tex}")
+                        tex.use(location=i)
+                        self.program[f"u_texture_{i}"] = i
+                    else:
+                        print(f"Warning: Texture is not of type mgl.Texture - {type(tex)}")
+    
+                    self.program[uniform_name] = i
+                else:
+                    print(f"Warning: '{mat_name}' is not a texture, got {type(tex)}")
 
         # Set up shader matrices
         self.program['m_proj'].write(self.camera.m_proj)
@@ -178,4 +243,3 @@ class Cat(BaseModel):
         self.program['light.Ia'].write(self.app.light.Ia)
         self.program['light.Id'].write(self.app.light.Id)
         self.program['light.Is'].write(self.app.light.Is)
-        

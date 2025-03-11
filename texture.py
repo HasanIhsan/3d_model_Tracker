@@ -8,7 +8,7 @@ class Texture:
         self.ctx = ctx
         self.textures = {}
         self.textures[0] = self.get_texture(path='textures/notex.png')
-        #self.textures[1] = self.get_texture(path='textures/test.png')
+        self.textures[1] = self.get_texture(path='textures/test.png')
         #self.textures[2] = self.get_texture(path='textures/notex.png')
         self.textures['cat'] = self.load_texture_mtl('objects/vtuber/ImageToStl.com_fak3rR_.vrm.mtl', tex_id='cat')
 
@@ -55,4 +55,9 @@ class Texture:
         return None
 
     def destroy(self):
-        [tex.release() for tex in self.textures.values()]
+    # Ensure you're iterating over the texture objects inside the dictionary, not the dictionary itself
+        for tex in self.textures.values():
+            if isinstance(tex, mgl.Texture):
+                tex.release()
+            else:
+                print(f"Warning: Found non-texture object: {type(tex)}")

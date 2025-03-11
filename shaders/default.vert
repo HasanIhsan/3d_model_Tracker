@@ -13,6 +13,8 @@ flat out int material_id;  // Pass material ID to fragment shader
 uniform mat4 m_proj;
 uniform mat4 m_view;
 uniform mat4 m_model;
+//uniform int material_id;
+
 
 void main() {
     uv_0 = in_texcoord_0;

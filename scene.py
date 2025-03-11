@@ -21,6 +21,8 @@ class Scene:
         # cat = Cat(app, pos=(0, 2, 10), scale=(0.5, 0.5, 0.5), render_mode='all')
        # add(Cat(app, pos=(0,2,10), scale=(0.5,0.5,0.5), render_mode='single', part_to_render='N00_000_Hair_00_HAIR_(Instance)'))
         add(Cat(app, pos=(0,2,10), scale=(0.5,0.5,0.5), render_mode='all'))
+        
+        
     def render(self): 
         for obj in self.objects:
             obj.render()

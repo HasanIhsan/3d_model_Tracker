@@ -8,8 +8,9 @@ class VBO:
         self.ctx = ctx
         self.vbos = {}
         self.parts = {}
-        self.vbos['cube'] = CuboVBO(ctx)
         self.vbos['cat'] = CatVBO(ctx)
+        self.vbos['cube'] = CuboVBO(ctx)
+         
     
     def destroy(self):
         [vbo.destroy() for vbo in self.vbos.values()]
@@ -112,12 +113,14 @@ class CatVBO(BaseVBO):
         return np.concatenate(list(self.parts.values()), axis=0)  # Concatenate all parts' vertex data
 
 class BodyPart:
-    def __init__(self, vao, program, position=(0,0,0), rotation=(0,0,0), scale=(1,1,1)):
+    def __init__(self, vao, program, position=(0,0,0), rotation=(0,0,0), scale=(1,1,1), texture=None, material_id=0):
         self.vao = vao
         self.program = program
         self.position = glm.vec3(position)
         self.rotation = glm.vec3([glm.radians(a) for a in rotation])
         self.scale = glm.vec3(scale)
+        self.texture = texture      # Texture object for this part
+        self.material_id = material_id  # The index corresponding to this part’s texture
 
     def get_model_matrix(self):
         m = glm.mat4()
@@ -130,7 +133,12 @@ class BodyPart:
 
     def update(self):
         self.program['m_model'].write(self.get_model_matrix())
+        # Bind the texture for this part to its texture unit.
+        if self.texture:
+            self.texture.use(location=self.material_id)
+        # Set the uniform for material_id so the shader knows which texture to use.
+        self.program['material_id'].value = self.material_id
 
-    def render(self): 
+    def render(self):
         self.update()
         self.vao.render()
