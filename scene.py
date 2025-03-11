@@ -13,11 +13,11 @@ class Scene:
         app = self.app
         add = self.app_objects
 
-        n, s = 30, 2
-        for x in range(-n, n, s):
-            for z in range(-n,n,s):
-                add(Cube(app, pos=(x, -s, z)))
-
+        #n, s = 30, 2
+        #for x in range(-n, n, s):
+        #    for z in range(-n,n,s):
+        #        add(Cube(app, pos=(x, -s, z)))
+        add(Cube(app, pos=(1,1,1)))
         # cat = Cat(app, pos=(0, 2, 10), scale=(0.5, 0.5, 0.5), render_mode='all')
        # add(Cat(app, pos=(0,2,10), scale=(0.5,0.5,0.5), render_mode='single', part_to_render='N00_000_Hair_00_HAIR_(Instance)'))
         add(Cat(app, pos=(0,2,10), scale=(0.5,0.5,0.5), render_mode='all'))

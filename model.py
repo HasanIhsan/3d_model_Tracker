@@ -94,11 +94,13 @@ class Cat(BaseModel):
         }
 
         # Load all parts from the VBO
-        vbo = app.mesh.vao.vbo.vbos['cat']
+        vbo = app.mesh.vao.vbo.vbos[vao_name]
+        
+      
         
         # Debug: Check if VBO has parts
-        print(f"Cat VBO Parts: {len(vbo.parts)}")
-        print(vbo.parts.keys())
+        #print(f"Cat VBO Parts: {len(vbo.parts)}")
+        #print(vbo.parts.keys())
         
         # Iterate over all parts and create a VAO for each
         for part_name, vertex_data in vbo.parts.items():
@@ -126,7 +128,7 @@ class Cat(BaseModel):
         self.on_init()
         
     def update(self):
-        print('Updating body parts')
+        #print('Updating body parts')
         # Update all body parts
         for part in self.parts.values():
             part.update()
@@ -140,11 +142,11 @@ class Cat(BaseModel):
         if self.render_mode == 'all':
             # Render all body parts
             for part_name, part in self.parts.items():
-                print(f"Rendering body part: {part_name}")
+                #print(f"Rendering body part: {part_name}")
                 part.render()
         elif self.render_mode == 'single' and self.part_to_render in self.parts:
             # Render only the specified part
-            print(f"Rendering specific part: {self.part_to_render}")
+           # print(f"Rendering specific part: {self.part_to_render}")
             self.parts[self.part_to_render].render()
         else:
             print(f"Invalid render mode or part not found: {self.part_to_render}")
@@ -153,9 +155,9 @@ class Cat(BaseModel):
         # Apply textures to all parts
         if isinstance(self.tex_id, str):  # If tex_id is a string (e.g., 'cat')
             material_textures = self.textures  # This is a dictionary of textures for the 'cat' model
-            for material_name, texture in material_textures.items():
+            for material_name, self.texture in material_textures.items():
                 texture_unit = list(material_textures.keys()).index(material_name)  # Assign a unique texture unit
-                texture.use(location=texture_unit)
+                self.texture.use(location=texture_unit)
                 uniform_name = f'u_texture_{texture_unit}'
                 
                 print(f'Material name: {material_name}, texture unit: {texture_unit}, uniform name: {uniform_name}')
@@ -169,9 +171,11 @@ class Cat(BaseModel):
         # Set up shader matrices
         self.program['m_proj'].write(self.camera.m_proj)
         self.program['m_view'].write(self.camera.m_view)
+        self.program['m_model'].write(self.m_model)
 
         # Apply lighting settings
         self.program['light.position'].write(self.app.light.position)
         self.program['light.Ia'].write(self.app.light.Ia)
         self.program['light.Id'].write(self.app.light.Id)
         self.program['light.Is'].write(self.app.light.Is)
+        

@@ -8,17 +8,20 @@ class VAO:
         self.program = ShaderProgram(ctx)
         self.vaos = {}
 
+
+          # Cat VAO
+        self.vaos['cat'] = self.get_vao(
+            program=self.program.programs['default'],
+            vbo=self.vbo.vbos['cat']
+        )
+        
         # Cube VAO
         self.vaos['cube'] = self.get_vao(
             program=self.program.programs['default'],
             vbo=self.vbo.vbos['cube']
         )
 
-        # Cat VAO
-        self.vaos['cat'] = self.get_vao(
-            program=self.program.programs['default'],
-            vbo=self.vbo.vbos['cat']
-        )
+       
 
     def get_vao(self, program, vbo):
         if vbo.vbo is None:
